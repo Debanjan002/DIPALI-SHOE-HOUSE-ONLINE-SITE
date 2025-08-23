@@ -72,11 +72,11 @@ const Header: React.FC<HeaderProps> = ({ onSearchChange }) => {
             {/* Contact Info */}
             <div className="flex items-center gap-3">
               <a
-                href="https://wa.me/916296329245"
+                href="tel:+916296329245"
                 className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-all flex items-center gap-2"
               >
                 <Phone className="w-4 h-4" />
-                <span className="hidden sm:inline">WhatsApp</span>
+                <span className="hidden sm:inline">Call Us!!</span>
               </a>
             </div>
           </div>

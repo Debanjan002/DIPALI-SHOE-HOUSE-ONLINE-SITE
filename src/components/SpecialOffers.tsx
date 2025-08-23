@@ -38,7 +38,7 @@ const SpecialOffers: React.FC = () => {
       </div>
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-             🎁দুর্গাপূজার জন্য ধামাকাঅফার 🎁
+             🎁দুর্গাপূজার জন্য ধামাকা অফার 🎁
           </h2>
           <p className="text-gray-600">Don't miss out on these amazing deals!</p>
         </div>

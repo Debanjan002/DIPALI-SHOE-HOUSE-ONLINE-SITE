@@ -10,6 +10,50 @@ const SHEET_NAME = 'Sheet1';
 // Google Sheets API endpoint for public sheets
 const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
 
+// Function to get image URLs from Google Sheets when images are uploaded as files
+const getImageUrlFromCell = (cellData: any): string[] => {
+  if (!cellData) return [];
+  
+  // If it's a direct URL (fallback)
+  if (typeof cellData.v === 'string' && cellData.v.startsWith('http')) {
+    return cellData.v.split(',').map((url: string) => url.trim()).filter(Boolean);
+  }
+  
+  // If images are uploaded as files in Google Sheets, they appear in the cell's formatted value
+  if (cellData.f && cellData.f.includes('IMAGE(')) {
+    // Extract URLs from IMAGE() functions
+    const imageMatches = cellData.f.match(/IMAGE\("([^"]+)"\)/g);
+    if (imageMatches) {
+      return imageMatches.map((match: string) => {
+        const urlMatch = match.match(/IMAGE\("([^"]+)"\)/);
+        return urlMatch ? urlMatch[1] : '';
+      }).filter(Boolean);
+    }
+  }
+  
+  // Handle Google Drive image links
+  if (cellData.v && typeof cellData.v === 'string') {
+    const driveLinks = cellData.v.split(',').map((link: string) => {
+      const trimmedLink = link.trim();
+      
+      // Convert Google Drive sharing links to direct image URLs
+      if (trimmedLink.includes('drive.google.com')) {
+        const fileIdMatch = trimmedLink.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (fileIdMatch) {
+          return `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
+        }
+      }
+      
+      return trimmedLink;
+    }).filter(Boolean);
+    
+    return driveLinks;
+  }
+  
+  // Fallback to default image if no valid images found
+  return ['https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg'];
+};
+
 // Mock data for demonstration - replace with actual Google Sheets integration
 const mockProducts: Product[] = [
   {
@@ -182,9 +226,9 @@ export const fetchGoogleSheetData = async (): Promise<Product[]> => {
           originalPrice: parseFloat(row.c[5]?.v) || undefined,
           sizes: (row.c[6]?.v || '').split(',').map((s: string) => s.trim()).filter(Boolean),
           colors: (row.c[7]?.v || '').split(',').map((s: string) => s.trim()).filter(Boolean),
-          images: (row.c[8]?.v || '').split(',').map((s: string) => s.trim()).filter(Boolean),
-          videos: (row.c[9]?.v || '').split(',').map((s: string) => s.trim()).filter(Boolean),
-          images3d: (row.c[10]?.v || '').split(',').map((s: string) => s.trim()).filter(Boolean),
+          images: getImageUrlFromCell(row.c[8]), // Handle uploaded image files
+          videos: getImageUrlFromCell(row.c[9]), // Handle uploaded video files
+          images3d: getImageUrlFromCell(row.c[10]), // Handle uploaded 3D image files
           description: row.c[11]?.v || '',
           features: (row.c[12]?.v || '').split(',').map((s: string) => s.trim()).filter(Boolean),
           rating: parseFloat(row.c[13]?.v) || 4.0,
@@ -200,7 +244,7 @@ export const fetchGoogleSheetData = async (): Promise<Product[]> => {
     }
     
     return products;
-    
+  
     
     // Return mock data for demo
     return new Promise((resolve) => {
@@ -215,10 +259,11 @@ export const fetchGoogleSheetData = async (): Promise<Product[]> => {
 };
 
 /*
-GOOGLE SHEETS SETUP INSTRUCTIONS:
+GOOGLE SHEETS SETUP INSTRUCTIONS FOR IMAGE FILES:
 
-To integrate with your Google Sheets:
+To integrate with your Google Sheets using uploaded image files:
 
+METHOD 1: Upload Images Directly to Google Sheets
 1. Create a new Google Sheet with these columns (in this exact order):
    A: ID (unique identifier)
    B: Name (product name)
@@ -228,9 +273,9 @@ To integrate with your Google Sheets:
    F: Original Price (original price as number, optional)
    G: Sizes (comma-separated: 6,7,8,9,10)
    H: Colors (comma-separated: Black,Brown,White)
-   I: Images (comma-separated URLs)
-   J: Videos (comma-separated video URLs, optional)
-   K: 3D Images (comma-separated 3D image URLs, optional)
+   I: Images (upload image files directly to cells)
+   J: Videos (upload video files or provide URLs)
+   K: 3D Images (upload 3D image files)
    L: Description (product description)
    M: Features (comma-separated: Handmade,Leather,Comfortable)
    N: Rating (number from 1-5)
@@ -239,19 +284,50 @@ To integrate with your Google Sheets:
    Q: Is Special Offer (TRUE/FALSE)
    R: Offer Text (optional special offer text)
 
-2. Make the sheet public:
+2. To upload images to cells:
+   - Click on the cell where you want to add an image
+   - Go to Insert > Image > Upload from computer
+   - Select your image file
+   - The image will be embedded in the cell
+   - For multiple images, you can add them in the same cell or use comma-separated Google Drive links
+
+METHOD 2: Use Google Drive Links (Recommended)
+1. Upload your images to Google Drive
+2. Right-click on each image and select "Get link"
+3. Make sure the link sharing is set to "Anyone with the link can view"
+4. Copy the sharing link
+5. In your Google Sheet, paste the Google Drive link in the Images column
+6. For multiple images, separate links with commas
+
+Example Google Drive link format:
+https://drive.google.com/file/d/1abcdefghijklmnopqrstuvwxyz/view?usp=sharing
+
+The system will automatically convert these to direct image URLs.
+
+METHOD 3: Use IMAGE() Function in Google Sheets
+1. Upload images to Google Drive and get shareable links
+2. In your Google Sheet cell, use the IMAGE() function:
+   =IMAGE("https://drive.google.com/uc?export=view&id=YOUR_FILE_ID")
+3. Replace YOUR_FILE_ID with the actual file ID from the Google Drive link
+
+3. Make the sheet public:
    - Click "Share" button
    - Change access to "Anyone with the link can view"
    - Copy the sheet ID from the URL
 
-3. Replace the SHEET_ID constant above with your sheet ID
+4. Replace the SHEET_ID constant above with your sheet ID
 
-4. Uncomment the real Google Sheets integration code and comment out the mock data return
+5. Uncomment the real Google Sheets integration code and comment out the mock data return
+
+IMPORTANT NOTES:
+- Images uploaded directly to Google Sheets cells will be automatically handled
+- Google Drive links will be converted to direct image URLs
+- Make sure your sheet and images are publicly viewable
+- The system supports multiple images per product (comma-separated)
+- Videos and 3D images work the same way as regular images
 
 Example Google Sheet URL:
 https://docs.google.com/spreadsheets/d/1abcdefghijklmnopqrstuvwxyz/edit
 
 Sheet ID would be: 1abcdefghijklmnopqrstuvwxyz
-
-IMPORTANT: Make sure your sheet is publicly viewable for the integration to work!
 */

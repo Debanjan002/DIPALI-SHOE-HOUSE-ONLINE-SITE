@@ -13,9 +13,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onWhatsAppCheckout, 
   const [selectedSize, setSelectedSize] = useState('');
   const [isLiked, setIsLiked] = useState(false);
 
-  // If product is out of stock, do not render anything
-  if (!product.inStock) return null;
-
   const handleQuickOrder = () => {
     if (!selectedSize) {
       onViewDetails(product);
@@ -24,7 +21,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onWhatsAppCheckout, 
     onWhatsAppCheckout(product, selectedSize);
   };
 
-  const discountPercentage = product.originalPrice
+  const discountPercentage = product.originalPrice 
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
@@ -36,11 +33,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onWhatsAppCheckout, 
       {/* Image Container */}
       <div className="relative overflow-hidden">
         <img
-          src={product.images[currentImage] || 'https://static.vecteezy.com/system/resources/previews/024/044/729/non_2x/opening-soon-coming-soon-template-coming-soon-logo-sign-coming-soon-banner-design-vector.jpg'}
+          src={product.images[currentImage] || 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg'}
           alt={product.name}
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg';
+          }}
           className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500"
         />
-
+        
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           {product.isSpecialOffer && (
@@ -54,7 +55,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onWhatsAppCheckout, 
               {discountPercentage}% OFF
             </span>
           )}
-          {/* Removed Out of Stock badge since out-of-stock products won't render */}
+          {!product.inStock && (
+            <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">
+              Out of Stock
+            </span>
+          )}
         </div>
 
         {/* Media Indicators */}
@@ -76,14 +81,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onWhatsAppCheckout, 
           <button
             onClick={() => setIsLiked(!isLiked)}
             className={`p-2 rounded-full shadow-lg backdrop-blur-sm transition-all ${
-              isLiked
-                ? 'bg-red-500 text-white'
+              isLiked 
+                ? 'bg-red-500 text-white' 
                 : 'bg-white/90 text-gray-600 hover:bg-red-500 hover:text-white'
             }`}
           >
             <Heart className="w-4 h-4" />
           </button>
-          <button
+          <button 
             onClick={() => onViewDetails(product)}
             className="p-2 bg-white/90 text-gray-600 rounded-full shadow-lg hover:bg-blue-600 hover:text-white transition-all backdrop-blur-sm"
           >
@@ -122,7 +127,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onWhatsAppCheckout, 
         </div>
 
         {/* Product Name */}
-        <h3
+        <h3 
           className="font-semibold text-gray-900 text-lg mb-3 line-clamp-2 leading-tight cursor-pointer hover:text-blue-600 transition-colors"
           onClick={() => onViewDetails(product)}
         >
@@ -132,11 +137,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onWhatsAppCheckout, 
         {/* Price */}
         <div className="flex items-center gap-2 mb-4">
           <span className="text-xl font-bold text-gray-900">
-            MRP:₹{product.price.toLocaleString()}
+            ₹{product.price.toLocaleString()}
           </span>
+          {product.originalPrice && (
+            <span className="text-gray-500 line-through text-sm">
+              ₹{product.originalPrice.toLocaleString()}
+            </span>
+          )}
         </div>
-        <span><h3 className='text-xl font-bold text-green-700'>🎊For Offers And Actual Price Visit Store </h3></span>
-        <span><h3 className='text-xl font-bold text-green-700'>🎊সঠিক অফার এবং প্রকৃত মূল্য জানতে দোকানে আসুন। </h3></span>
 
         {/* Available Sizes */}
         <div className="mb-4">
@@ -175,7 +183,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onWhatsAppCheckout, 
             <Eye className="w-4 h-4" />
             View Details
           </button>
-
+          
           {selectedSize && (
             <button
               onClick={handleQuickOrder}
